@@ -109,5 +109,63 @@ public class GOsalesDAO {
 		}
 	}
 	
+	public List<Retailers> getAllVertex(String nazione){
+		String query = "SELECT * "
+				+ "FROM go_retailers "
+				+ "WHERE Country = ? ";
+		List<Retailers> result = new ArrayList<Retailers>();
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(query);
+			st.setString(1, nazione);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				result.add(new Retailers(rs.getInt("Retailer_code"), 
+						rs.getString("Retailer_name"),
+						rs.getString("Type"), 
+						rs.getString("Country")));
+			}
+			conn.close();
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+		
+	}
+	
+	public int getEdge(int R1, int R2, int anno1, int M){
+		String query = "SELECT COUNT(DISTINCT s1.Product_number) AS c "
+				+ "FROM go_daily_sales s1 , go_daily_sales s2 "
+				+ "WHERE  s1.Retailer_code = ?  AND s2.Retailer_code = ? "
+				+ "AND  s1.Product_number = s2.Product_number "
+				+ "AND YEAR(s1.Date) = YEAR(s2.Date) AND YEAR(s1.Date) = ? "
+				+ "HAVING c>=? ";
+				
+		int result = 0;
+
+		try {
+			Connection conn = DBConnect.getConnection();
+			PreparedStatement st = conn.prepareStatement(query);
+			st.setInt(1, R1);
+			st.setInt(2, R2);
+			st.setInt(3, anno1);
+			st.setInt(4, M);
+			ResultSet rs = st.executeQuery();
+
+			while (rs.next()) {
+				result = rs.getInt("c");
+			}
+			conn.close();
+			return result;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			System.out.println("Errore connessione al database");
+			throw new RuntimeException("Error Connection Database");
+		}
+	}
+	
 	
 }

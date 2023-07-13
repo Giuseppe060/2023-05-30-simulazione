@@ -1,9 +1,14 @@
 package it.polito.tdp.gosales;
 
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 import java.util.ResourceBundle;
 
+import it.polito.tdp.gosales.dao.GOsalesDAO;
+import it.polito.tdp.gosales.model.Arco;
 import it.polito.tdp.gosales.model.Model;
+import it.polito.tdp.gosales.model.Retailers;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -14,6 +19,7 @@ import javafx.scene.control.TextField;
 public class FXMLController {
 	
 	private Model model;
+	GOsalesDAO dao = new GOsalesDAO();
 
     @FXML
     private ResourceBundle resources;
@@ -31,16 +37,16 @@ public class FXMLController {
     private Button btnSimula;
 
     @FXML
-    private ComboBox<?> cmbAnno;
+    private ComboBox<Integer> cmbAnno;
 
     @FXML
-    private ComboBox<?> cmbNazione;
+    private ComboBox<String> cmbNazione;
 
     @FXML
     private ComboBox<?> cmbProdotto;
 
     @FXML
-    private ComboBox<?> cmbRivenditore;
+    private ComboBox<Retailers> cmbRivenditore;
 
     @FXML
     private TextArea txtArchi;
@@ -62,11 +68,55 @@ public class FXMLController {
 
     @FXML
     void doAnalizzaComponente(ActionEvent event) {
+        Retailers r = cmbRivenditore.getValue();
+        if(r == null) {
+        	txtResult.appendText("Please select a retailers");
+        	return ;
+        }
+    	
+    	txtResult.appendText("La componente connessa di "+r.getName()+" ha dimensione "+model.nComponentiConnesse(r)+"\n");
+    	txtResult.appendText("Il peso totale degli archi della componenente connessa è "+model.totalePesoArchi(r));
 
     }
 
     @FXML
     void doCreaGrafo(ActionEvent event) {
+    	
+    	String country = cmbNazione.getValue();
+    	if (country==null) {
+    		this.txtResult.setText("Please select a country");
+    		return;
+    	}
+    	Integer anno = cmbAnno.getValue();
+    	if (anno == null) {
+    		this.txtResult.setText("Please select a year");
+    		return;
+    	}
+    	
+    	int M = Integer.parseInt(txtNProdotti.getText());
+    	
+    	model.creaGrafo(country, anno, M);
+    	
+    	txtResult.appendText("GRAFO CREATO CON \n");
+    	txtResult.appendText("#"+model.nVertici()+" vertici"+"\n");
+    	txtResult.appendText("#"+model.nArchi()+" archi"+"\n");
+    	
+    	List<Retailers> vertici = dao.getAllVertex(country);
+    	Collections.sort(vertici);
+    	
+    	txtVertici.appendText(vertici.toString()+"\n");
+    	
+    	List<Arco> archi = model.getListaArchi();
+    	Collections.sort(archi);
+    	for(Arco a : archi) {
+    		txtArchi.appendText(a.getPeso()+": "+a.getR1().getName()+"<->"+a.getR2().getName()+"\n");
+    	}
+    	
+    	for(Retailers r : dao.getAllVertex(country)) {
+    		cmbRivenditore.getItems().add(r);
+    	}
+    	cmbRivenditore.setDisable(false);
+    	btnAnalizzaComponente.setDisable(false);
 
     }
 
@@ -90,6 +140,14 @@ public class FXMLController {
         assert txtQ != null : "fx:id=\"txtQ\" was not injected: check your FXML file 'Scene.fxml'.";
         assert txtResult != null : "fx:id=\"txtResult\" was not injected: check your FXML file 'Scene.fxml'.";
         assert txtVertici != null : "fx:id=\"txtVertici\" was not injected: check your FXML file 'Scene.fxml'.";
+        
+        for(int i=2015; i<2019;i++) {
+        	cmbAnno.getItems().add(i);
+        }
+        for(Retailers r : dao.getAllRetailers()) {
+        	if(!cmbNazione.getItems().contains(r.getCountry()))
+        	cmbNazione.getItems().add(r.getCountry());
+        }
 
     }
     
